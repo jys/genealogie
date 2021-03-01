@@ -19,8 +19,8 @@ par son identifiant gramps. Cet arbre peut être filtré tel qu'expliqué dans
 Les ancêtres filtrants sont spécifiés par leur identifiant gramps.
 
 usage   : %s <nom de la base> <id individu> [<ids ancêtres filtrants>]
-example : %s sage I0001
-example : %s sage I0001 I0008,I1243
+example : %s sage-devoucoux I0001
+example : %s sage-devoucoux I0001 I0008,I1243
 """%(script, script, script))
     
 def main():
@@ -277,9 +277,6 @@ class ArbreAncestres:
         rejsultat.extend(self.ascendants(numejro*2 +1))
         return rejsultat
                       
-
-        
-        
          
 if __name__ == '__main__':
     main()

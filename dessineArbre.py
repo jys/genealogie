@@ -25,8 +25,8 @@ gramps d'ancêtres particuliers (voir "Accès aux bases de données Gramps",
 LAT2020.JYS.483). 
 
 usage   : {:s} <base> <individu-racine> [NP|PN] [nbre générations] [filtre]
-example : {:s} sage I0001
-example : {:s} sage I0001 PN 0 I0008,I1243
+example : {:s} sage-devoucoux I0001
+example : {:s} sage-devoucoux I0001 PN 0 I0008,I1243
 """.format(script, script, script))
 
 def main():
@@ -244,8 +244,9 @@ def ejcritPdf(nomFichierSortie, arbreAncestres, ordreNp, positions, max_h, max_v
         if numejro in manquants: continue
         ((prejnom, nom), (dateNaissance, lieuNaissance), (dateDejcehs, lieuDejcehs), (dateMariage, lieuMariage)) = arbreAncestres.attributsAncestre(numejro)
         #dessine un ancêtre
-        if ordreNp: ancestresPdf.dessineAncestre(rang_h, rang_v, nom, prejnom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
-        else: ancestresPdf.dessineAncestre(rang_h, rang_v, prejnom, nom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
+        if ordreNp: nomPrenom = nom + ' ' + prejnom
+        else: nomPrenom = prenom + ' ' + nom
+        ancestresPdf.dessineAncestre(rang_h, rang_v, nomPrejnom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
         #dessine le lien vers ses antécédents s'ils existent
         numejroPehre = numejro*2
         numejroMehre = numejro*2 +1

@@ -25,7 +25,7 @@ ainsi que les nom, prénom, date et lieu de naissance de son père et de
 sa mère et la date du mariage.
 
 usage   : %s <nom de la base> [<id individu>]
-example : %s sage I0001
+example : %s sage-devoucoux I0001
 """%(script, script))
     
 def main():
@@ -122,6 +122,11 @@ class GrampsDb:
         return famillePoigneje
     
     ############################
+    # retourne la liste des poignejes des familles dont l'individu identifiej par sa poigneje gramps est un des parents 
+    def famillesDuParent(self, parentPoigneje):
+        return self.db.get_person_from_handle(parentPoigneje).get_family_handle_list()
+    
+    ############################
     # retourne la poigneje du pehre de la famille identifieje par sa poigneje gramps, '' s'il n'existe pas
     def pehreDeLaFamille(self, famillePoigneje):
         pehrePoigneje = self.db.get_family_from_handle(famillePoigneje).get_father_handle()
@@ -129,12 +134,20 @@ class GrampsDb:
         return pehrePoigneje
     
     ############################
-    # retourne la poigneje du mehre de la famille identifieje par sa poigneje gramps, '' s'il n'existe pas
+    # retourne la poigneje de la mehre de la famille identifieje par sa poigneje gramps, '' s'il n'existe pas
     def mehreDeLaFamille(self, famillePoigneje):
         mehrePoigneje = self.db.get_family_from_handle(famillePoigneje).get_mother_handle()
         if mehrePoigneje is None : return ''
         return mehrePoigneje
     
+    ############################
+    # retourne la liste des poignejes des enfants d'une famille identifieje par sa poigneje gramps 
+    def enfantsDeLaFamille(self, famillePoigneje):
+        enfantsPoignejes = []
+        for enfantRef in self.db.get_family_from_handle(famillePoigneje).get_child_ref_list():
+            enfantsPoignejes.append(enfantRef.ref)
+        return enfantsPoignejes
+     
     ############################
     # retourne Prejnom, Nom de l'individu spejcifiej par sa poigneje, '' s'il n'existe pas
     def prejnomNom(self, individuPoigneje):
@@ -142,6 +155,13 @@ class GrampsDb:
         if individu is None : return ('', '')
         nomPrimaire = individu.get_primary_name()
         return (nomPrimaire.first_name, nomPrimaire.surname_list[0].surname)
+
+    ############################
+    # retourne le genre de l'individu spejcifiej par sa poigneje, 0: femme, 1: homme, 2 s'il n'existe pas
+    def genre(self, individuPoigneje):
+        individu = self.db.get_person_from_handle(individuPoigneje)
+        if individu is None : return 2
+        return individu.get_gender()
     
     ############################
     # retourne date et lieu de naissance de l'individu spejcifiej par sa poigneje, '' si elle n'existe pas

@@ -62,8 +62,8 @@ ESP_X = 0.7*cm          #longueur espace
 REC_X = (landscape(A4)[0] - M_G - M_D) / N_REC_X - ESP_X
 REC_Y = 1.1*cm          #hauteur rectangle
 C_G = 1.0*cm            #cartouche
-#ESP_Y = -8             #hauteur espace
-ESP_Y = -3              #hauteur espace
+ESP_Y = -11             #hauteur espace
+#ESP_Y = -3              #hauteur espace
 MH_REC = 9              #marge haute dans rectangle
 MG_REC = 3              #marge gauche dans rectangle
 MD_REC = 3              #marge droite dans rectangle
@@ -73,7 +73,7 @@ P_FILI = 20             #police filigrane
 P_TITRE1 = 30           #police titre 1
 P_TITRE2 = 20           #police titre 2
 P_TITRE3 = 12           #police titre 3
-RANG_RACINE = 0         #position de la racine (0 = max à gauche)
+RANG_RACINE = 2         #position de la racine (0 = max à gauche)
 
     
 class AncestresPdfImprimable:
@@ -322,7 +322,7 @@ class AncestresPdfImprimable:
         self.can.rotate(45)
         texte.setFont("Helvetica-Oblique", P_FILI)
         for i in range(15):
-            for j in range (2):
+            for j in range (1):
                 texte.textOut(self.filigrane)
             texte.textLine()
         self.can.drawText(texte)
