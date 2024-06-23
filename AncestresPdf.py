@@ -251,44 +251,6 @@ class AncestresPdf:
         max_y = texte.getY()        #position verticale du curseur apres le cartouche
         return max_y
         
-    #def ejcritTitre(self, titre, image, statistiques):
-        #self.can.saveState()
-        #maintenant = datetime.datetime.today()
-        #donneesTable = []
-        #styles = getSampleStyleSheet()
-        #styleN = styles['Normal']
-        #styleN.fontName = 'Helvetica-Bold'
-        #styleN.fontSize = P_TITRE1
-        #styleN.leading = 0
-        #donneesTable.append([Paragraph(u'Arbre généalogique de', styleN)])
-        #donneesTable.append([Paragraph(u'%s'%(titre), styleN)])
-        #styleN.fontSize = P_TITRE2
-        ##styleN.leading = P_TITRE2
-        #logo = Image(image)
-        #logo.drawHeight = 4*cm*logo.drawHeight / logo.drawWidth
-        #logo.drawWidth = 4*cm
-        #tableLogo = Table([[Paragraph(u'édité le %02d-%02d-%s par'%(int(maintenant.day), int(maintenant.month), maintenant.year), styleN), logo]])
-        #tableLogo.setStyle([
-                            #('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                            #('LEFTPADDING', (0,0), (-1,-1), 0),
-                            #('RIGHTPADDING', (0,0), (-1,-1), 0),
-                            #('TOPPADDING', (0,0), (-1,-1), 0),
-                            #('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                            #('BOX', (0,0), (-1,-1), 0.25, colors.black),
-                            #('INNERGRID', (0,0), (-1,-1), 0.25, colors.black)])                         
-        #donneesTable.append([tableLogo])
-        #table = Table(donneesTable)   
-        #tableStyle = [
-                      #('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                      #('LEFTPADDING', (0,0), (-1,-1), 0),
-                      #('TOPPADDING', (0,0), (-1,-1), 0),
-                      #('BOTTOMPADDING', (0,0), (-1,-1), 30),
-                      #('BOX', (0,0), (-1,-1), 0.25, colors.black),
-                      #('INNERGRID', (0,0), (-1,-1), 0.25, colors.black)]
-        #table.setStyle(tableStyle)
-        #w, h = table.wrap(17*cm, 10*cm)
-        #table.drawOn(self.can, M_G, self.page_y - M_H - h)
-        #self.can.restoreState()
         
     def ejcritPageA4(self, page_x):
         xPageA4 = A4[1]

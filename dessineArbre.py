@@ -18,15 +18,17 @@ et par ordre d'ancêtres d'un individu-racine spécifié par son identifiant
 gramps.
 Le PDF est écrit dans rejsultat/<prénom-nom>-ancestres-complet.pdf 
 ou rejsultat/<prénom-nom>-ancestres-partiel.pdf
+Par défaut les ancêtres sont dessinés au format court (C). On peut les 
+dessiner au format long (L).
 Les ancêtres sont identifiés par nom-prénom (NP) (défaut) ou prénom-nom (PN)
 Il est possible de limiter le nombre de générations affichées (0 = toutes)
 Il est possible de filtrer les ancêtres en fournissant les identifiants 
 gramps d'ancêtres particuliers (voir "Accès aux bases de données Gramps", 
 LAT2020.JYS.483). 
 
-usage   : {:s} <base> <individu-racine> [NP|PN] [nbre générations] [filtre]
+usage   : {:s} <base> <individu-racine> [L|C] [NP|PN] [nbre générations] [filtre]
 example : {:s} sage-devoucoux I0001
-example : {:s} sage-devoucoux I0001 PN 0 I0008,I1243
+example : {:s} sage-devoucoux I0001 L PN 0 I0008,I1243
 """.format(script, script, script))
 
 def main():
@@ -34,18 +36,24 @@ def main():
         if len(sys.argv) < 3: raise Exception()
         nomBase = sys.argv[1].strip()
         racineIdentifiant = sys.argv[2].strip()
+        formatLong = False
         ordreNp = True
         nbGejnejrations = 0
         identifiantsFiltrants = []
         if len(sys.argv) > 3:
-            arg2 = sys.argv[3].strip().upper()
-            if arg2 not in ('NP', 'PN'): raise Exception('NP ou PN')
-            ordreNp = arg2 == 'NP'
-        if len(sys.argv) > 4: nbGejnejrations = int(sys.argv[4])
-        if len(sys.argv) > 5: identifiantsFiltrants = sys.argv[5].strip().split(',')
-        dessineArbre(nomBase, racineIdentifiant, ordreNp, nbGejnejrations, identifiantsFiltrants)
+            arg = sys.argv[3].strip().upper()
+            if arg not in ('L', 'C'): raise Exception('L ou C')
+            formatLong = arg == 'L'
+        if len(sys.argv) > 4:
+            arg = sys.argv[4].strip().upper()
+            if arg not in ('NP', 'PN'): raise Exception('NP ou PN')
+            ordreNp = arg == 'NP'
+        if len(sys.argv) > 5: nbGejnejrations = int(sys.argv[5])
+        if len(sys.argv) > 6: identifiantsFiltrants = sys.argv[6].strip().split(',')
+        dessineArbre(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, identifiantsFiltrants)
     except Exception as exc:
-        if len(exc.args) == 0: usage()
+        if len(exc.args) == 0: 
+            usage()
         else:
             print ("******************************")
             print (exc.args[0])
@@ -53,7 +61,7 @@ def main():
             raise
         sys.exit()
         
-def dessineArbre(nomBase, racineIdentifiant, ordreNp, nbGejnejrations, identifiantsFiltrants):
+def dessineArbre(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, identifiantsFiltrants):
     # ejtablit l'arbre 
     arbreAncestres = ArbreAncestres(nomBase)
     arbreAncestres.arbreComplet(racineIdentifiant)
@@ -121,8 +129,8 @@ def dessineArbre(nomBase, racineIdentifiant, ordreNp, nbGejnejrations, identifia
     trace(positionsTassejes)
     
     #ejcrit le PDF des ancestres version "positionnements moyennejs"
-    ejcritPdf(nomFichierSortieC, arbreAncestres, ordreNp, positionsTassejes, max_h, max_v, pos_2, titre, filigrane, latejcon, statistiques)
-    ejcritPdfImprimable((nomFichierSortieE, nomFichierSortieF), arbreAncestres, ordreNp, positionsTassejes, titre, filigrane, latejcon, statistiques)         
+    ejcritPdf(nomFichierSortieC, arbreAncestres, formatLong, ordreNp, positionsTassejes, max_h, max_v, pos_2, titre, filigrane, latejcon, statistiques)
+    ejcritPdfImprimable((nomFichierSortieE, nomFichierSortieF), arbreAncestres, formatLong, ordreNp, positionsTassejes, titre, filigrane, latejcon, statistiques)         
          
 ############################
 #trouve le rang vertical "normal" en fonction du numejro
@@ -234,18 +242,18 @@ def trace(positions):
     
 ############################
 #creje un PDF
-def ejcritPdf(nomFichierSortie, arbreAncestres, ordreNp, positions, max_h, max_v, pos_2, titre, filigrane, image, statistiques):
+def ejcritPdf(nomFichierSortie, arbreAncestres, formatLong, ordreNp, positions, max_h, max_v, pos_2, titre, filigrane, image, statistiques):
     # max_h = max horizontal, max_v = max vertical, pos_2 = position verticale du pehre
     #ouvre le PDF
-    ancestresPdf = AncestresPdf(nomFichierSortie, max_h +1, max_v, pos_2, filigrane, titre, image, statistiques)
+    ancestresPdf = AncestresPdf(nomFichierSortie, max_h +1, max_v, pos_2, filigrane, titre, image, statistiques, formatLong)
     #dessine tous les ancestres
     manquants = arbreAncestres.lesManquants()
     for numejro, (rang_h, rang_v) in positions.items():
         if numejro in manquants: continue
         ((prejnom, nom), (dateNaissance, lieuNaissance), (dateDejcehs, lieuDejcehs), (dateMariage, lieuMariage)) = arbreAncestres.attributsAncestre(numejro)
         #dessine un ancêtre
-        if ordreNp: nomPrenom = nom + ' ' + prejnom
-        else: nomPrenom = prenom + ' ' + nom
+        if ordreNp: nomPrejnom = nom + ' ' + prejnom
+        else: nomPrejnom = prejnom + ' ' + nom
         ancestresPdf.dessineAncestre(rang_h, rang_v, nomPrejnom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
         #dessine le lien vers ses antécédents s'ils existent
         numejroPehre = numejro*2
@@ -266,20 +274,23 @@ def ejcritPdf(nomFichierSortie, arbreAncestres, ordreNp, positions, max_h, max_v
 
 ############################
 #crée un PDF imprimable (en pages A4)
-def ejcritPdfImprimable(nomsFichiersSortie, arbreAncestres, ordreNp, positions, titre, filigrane, image, statistiques):
+def ejcritPdfImprimable(nomsFichiersSortie, arbreAncestres, formatLong, ordreNp, positions, titre, filigrane, image, statistiques):
     #ouvre le PDF
-    ancestresPdfImprimable = AncestresPdfImprimable(nomsFichiersSortie, filigrane, titre, image, statistiques)
+    ancestresPdfImprimable = AncestresPdfImprimable(nomsFichiersSortie, filigrane, titre, image, statistiques, formatLong)
     #envoie toutes les infos au gestionnaire de PDF
     for numejro, (rang_h, rang_v) in positions.items():
         ((prejnom, nom), (dateNaissance, lieuNaissance), (dateDejcehs, lieuDejcehs), (dateMariage, lieuMariage)) = arbreAncestres.attributsAncestre(numejro)
         if nom == '' and prejnom == '': continue
         #ajoute un ancêtre
-        if ordreNp: ancestresPdfImprimable.ajouteAncestre(numejro, rang_h, rang_v, nom, prejnom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
-        else: ancestresPdfImprimable.ajouteAncestre(numejro, rang_h, rang_v, prejnom, nom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
+        if ordreNp: nomPrejnom = nom + ' ' + prejnom
+        else: nomPrejnom = prejnom + ' ' + nom
+        ancestresPdfImprimable.ajouteAncestre(numejro, rang_h, rang_v, nomPrejnom, dateNaissance, lieuNaissance, dateDejcehs, lieuDejcehs)
         #ajoute le lien vers ses antécédents systématiquement 
         numejroPehre = numejro*2
         numejroMehre = numejro*2 +1
         ancestresPdfImprimable.ajouteLien(numejro, numejroPehre, numejroMehre)
+        #ancestresPdfImprimable.ajouteLiensGauches((numejroPehre, numejroMehre))
+        #ancestresPdfImprimable.ajouteLiensDroits((numejro, ))
         #ajoute la date et le lieu du mariage s'ils existent
         if numejro &1 == 0:
             numejroEnfant = numejro //2

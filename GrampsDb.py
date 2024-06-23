@@ -86,7 +86,7 @@ class GrampsDb:
         if dbman.is_locked(db_path): dbman.break_lock(db_path)
         # ouvre la base
         db_loader = CLIDbLoader(dbstate)
-        self.ouverte = db_loader.read_file(db_path)
+        self.ouverte = db_loader.read_file(db_path, "", "")
         self.db = dbstate.db
         
     ############################
@@ -109,6 +109,7 @@ class GrampsDb:
     ############################
     # retourne l'identifiant d'un individu identifiej par sa poigneje, '' s'il n'existe pas
     def identifiantIndividu(self, poigneje):
+        if poigneje == '': return ''
         individu = self.db.get_person_from_handle(poigneje)
         if individu is None : return ''
         return individu.gramps_id
@@ -180,6 +181,7 @@ class GrampsDb:
     ############################
     # retourne date et lieu de mariage d'une famille spejcifieje par sa poigneje, '' si elle n'existe pas
     def dateLieuMariage(self, famillePoigneje):
+        if famillePoigneje == '' : return ('', '')
         famille = self.db.get_family_from_handle(famillePoigneje)
         if famille is None : return ('', '')
         for evejnementRef in famille.get_event_ref_list():

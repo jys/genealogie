@@ -19,27 +19,34 @@ qu'expliqué dans "Accès aux bases de données Gramps", LAT2020.JYS.483.
 Il est possible de limiter le nombre de générations affichées (0 = toutes)
 Le critère filtrant éventuel est l'identité des noms des descendants
 au nom de l'ancêtre (ce qui limite à la descendance mâle seulement)
+ou une liste d'identifiants de descendants (voir chercheIndividus.py)
 
-usage   : {} <nom de la base> <id individu> [nbre générations] [<noms identique>]
+usage   : {} <nom de la base> <id individu> [nbre générations] [<filtres>]
 example : {} sage-devoucoux I0141
 example : {} sage-devoucoux I0141 0 IDENT 
-""".format(script, script, script))
+example : {} sage-devoucoux I0141 0 I0000,I2181 
+""".format(script, script, script, script))
     
 def main():
     try:
         nbGejnejrations = 0
         ident = False
+        idsFiltrants = []
         if len(sys.argv) < 3: raise Exception()
         nomBase = sys.argv[1].strip()
         racineIdentifiant = sys.argv[2].strip()
         if len(sys.argv) > 3: nbGejnejrations = int(sys.argv[3])
         if len(sys.argv) > 4:
-            if sys.argv[4].upper().startswith('ID'): ident = True
-            else: raise Exception ('IDENT non reconnu')
-        testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident)
+            ident = sys.argv[4].upper().startswith('ID')
+            if not ident: idsFiltrants = sys.argv[4].strip().split(',')
+            #if sys.argv[4].upper().startswith('ID'): ident = True
+            #else: raise Exception ('IDENT non reconnu')
+        testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident, idsFiltrants)
         
     except Exception as exc:
-        if len(exc.args) == 0: usage()
+        if len(exc.args) == 0: 
+            usage()
+            raise
         else:
             print ("******************************")
             print (exc.args[0])
@@ -47,7 +54,7 @@ def main():
             raise
         sys.exit()
 
-def testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident):
+def testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident, idsFiltrants):
     arbreDescendants = ArbreDescendants(nomBase)
     arbreDescendants.arbreComplet(racineIdentifiant)
     print('sans filtre')
@@ -61,6 +68,11 @@ def testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident):
     if ident: 
         arbreDescendants.filtreArbre()
         print('avec filtre sur patronyme')
+        print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
+        print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
+    if len(idsFiltrants) != 0:
+        arbreDescendants.filtreIdsArbre(idsFiltrants)
+        print('avec filtre sur identifiants de descendants')
         print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
         print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
     arbreDescendants.afficheArbre()    
@@ -197,6 +209,35 @@ class ArbreDescendants:
             # on efface aussi les conjoints masles
             if len(clef) == 3 and clef[1]&1 == 0: self.descendants.pop(clef)
             
+    ############################
+    # filtre l'arbre, ne garde que les descendants qui aboutissent aux ejlejments filtrants 
+    def filtreIdsArbre(self, idsFiltrants):
+        # trouve les clefs des identifiants spejcifiejs
+        clefsFiltrantes = []
+        clefs = list(self.descendants.keys())
+        for clef in clefs: 
+            (raf, individuIdentifiant, raf, raf) = self.descendants[clef] 
+            if individuIdentifiant in idsFiltrants: clefsFiltrantes.append(clef) 
+        # constitue l'arbre a partir des ejlejments filtrants
+        clefsAncestres = set()
+        for clefFiltrante in clefsFiltrantes:
+            clef = clefFiltrante
+            while clef != (0,0):
+                (parentNumejro, raf, raf, raf) = self.descendants[clef]
+                clef = parentNumejro
+                clefsAncestres.add(clef)
+        # filtre ce qui n'a pas ejtej retenu
+        clefs = list(self.descendants.keys())
+        clefs.sort()
+        for clef in clefs:
+            # vire les reconjoints
+            if len(clef) == 3 and clef[2] == 1:
+                self.descendants.pop(clef)
+                continue
+            (parentNumejro, raf, raf, raf) = self.descendants[clef]
+            if clef not in clefsAncestres and parentNumejro not in clefsAncestres:
+                self.descendants.pop(clef)
+        
     ############################
     # restreint l'arbre par le nombre de gejnejrations max
     def tailleArbre(self, nbGejnejrations):
@@ -375,8 +416,8 @@ class ArbreDescendants:
             prejnomNom = self.grampsDb.prejnomNom(individuPoigneje)
             dateLieuNaissance = self.grampsDb.dateLieuNaissance(individuPoigneje)
             dateLieuDejcehs = self.grampsDb.dateLieuDejcehs(individuPoigneje)
-
-            print('{:15s} : {:15s} {:30s} {} {} - \u2020 {} {}'.format(str(clef), str(parentNumejro), ' '.join(prejnomNom), dateLieuNaissance[0], dateLieuNaissance[1], dateLieuDejcehs[0], dateLieuDejcehs[1]))
+            #print('{:10s} : {:8s} {} {:30s} {} {} - \u2020 {} {}'.format(str(clef), str(parentNumejro), individuIdentifiant, ' '.join(prejnomNom), dateLieuNaissance[0], dateLieuNaissance[1], dateLieuDejcehs[0], dateLieuDejcehs[1]))   
+            print('{:10s} : {:8s} {} {:30s}'.format(str(clef), str(parentNumejro), individuIdentifiant, ' '.join(prejnomNom)))
          
          
 if __name__ == '__main__':

@@ -12,10 +12,11 @@ def usage():
     print ("""© l'ATEJCON.  
 Recherche dans la base Gramps spécifiée des individus dont le texte de leur 
 prénom-nom contient ou correspond au modèle spécifié.
+Les expressions régulières sont orthodoxes. 
 
 usage   : %s <nom de la base> <modèle>
 exemple : %s sage-devoucoux "Joseph Sage"
-exemple : %s sage-devoucoux "*Sage"
+exemple : %s sage-devoucoux ".*Sage"
 """%(script, script, script))
     
 def main():
