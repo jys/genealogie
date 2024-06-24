@@ -152,6 +152,7 @@ class GrampsDb:
     ############################
     # retourne Prejnom, Nom de l'individu spejcifiej par sa poigneje, '' s'il n'existe pas
     def prejnomNom(self, individuPoigneje):
+        if individuPoigneje == '': return ''
         individu = self.db.get_person_from_handle(individuPoigneje)
         if individu is None : return ('', '')
         nomPrimaire = individu.get_primary_name()
@@ -160,6 +161,7 @@ class GrampsDb:
     ############################
     # retourne le genre de l'individu spejcifiej par sa poigneje, 0: femme, 1: homme, 2 s'il n'existe pas
     def genre(self, individuPoigneje):
+        if individuPoigneje == '': return ''
         individu = self.db.get_person_from_handle(individuPoigneje)
         if individu is None : return 2
         return individu.get_gender()
@@ -167,6 +169,7 @@ class GrampsDb:
     ############################
     # retourne date et lieu de naissance de l'individu spejcifiej par sa poigneje, '' si elle n'existe pas
     def dateLieuNaissance(self, individuPoigneje):
+        if individuPoigneje == '': return ''
         individu = self.db.get_person_from_handle(individuPoigneje)
         if individu is None : return ('', '')
         return self.dateLieuEjvejnement(individu.get_birth_ref())
@@ -174,6 +177,7 @@ class GrampsDb:
     ############################
     # retourne date et lieu de dejcehs de l'individu spejcifiej par sa poigneje, '' si elle n'existe pas
     def dateLieuDejcehs(self, individuPoigneje):
+        if individuPoigneje == '': return ''
         individu = self.db.get_person_from_handle(individuPoigneje)
         if individu is None : return ('', '')
         return self.dateLieuEjvejnement(individu.get_death_ref())

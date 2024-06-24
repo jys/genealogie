@@ -32,7 +32,7 @@ def main():
         nbGejnejrations = 0
         ident = False
         idsFiltrants = []
-        if len(sys.argv) < 3: raise Exception()
+        if len(sys.argv) < 3: raise Exception('USAGE')
         nomBase = sys.argv[1].strip()
         racineIdentifiant = sys.argv[2].strip()
         if len(sys.argv) > 3: nbGejnejrations = int(sys.argv[3])
@@ -44,9 +44,8 @@ def main():
         testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident, idsFiltrants)
         
     except Exception as exc:
-        if len(exc.args) == 0: 
+        if len(exc.args) == 1 and exc.args[0] == 'USAGE': 
             usage()
-            raise
         else:
             print ("******************************")
             print (exc.args[0])

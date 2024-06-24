@@ -61,7 +61,7 @@ def main():
             
         dessineArbre(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, ident, idsFiltrants)
     except Exception as exc:
-        if len(exc.args) == 0: 
+        if len(exc.args) == 1 and exc.args[0] == 'USAGE': 
             usage()
         else:
             print ("******************************")
