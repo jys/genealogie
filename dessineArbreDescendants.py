@@ -21,7 +21,8 @@ ou rejsultat/<prénom-nom>-descendants-partiel.pdf
 Par défaut les ancêtres sont dessinés au format court (C). On peut les 
 dessiner au format long (L).
 Les descendants sont identifiés par nom-prénom (NP) (défaut) ou prénom-nom (PN)
-Il est possible de limiter le nombre de générations affichées (0 = toutes)
+Il est possible de limiter le nombre de générations affichées (0 = toutes, 
+>0 = en partant de la racine, <0 = en partant des feuilles pour débogue)
 Le critère filtrant éventuel est l'identité des noms des descendants
 au nom de l'ancêtre (ce qui limite à la descendance mâle seulement)
 ou une liste d'identifiants de descendants (voir chercheIndividus.py)
@@ -59,7 +60,7 @@ def main():
             ident = sys.argv[6].upper().startswith('ID')
             if not ident: idsFiltrants = sys.argv[6].strip().split(',')
             
-        dessineArbre(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, ident, idsFiltrants)
+        dessineArbreDescendant(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, ident, idsFiltrants)
     except Exception as exc:
         if len(exc.args) == 1 and exc.args[0] == 'USAGE': 
             usage()
@@ -70,178 +71,233 @@ def main():
             raise
         sys.exit()
         
-def dessineArbre(nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, ident, idsFiltrants):
-    # ejtablit l'arbre 
-    arbreDescendants = ArbreDescendants(nomBase)
-    # construit l'arbre complet des descendants de l'individu spejcifiej avec les numejros normalisejs
-    arbreDescendants.arbreComplet(racineIdentifiant)
-    print('sans filtre : {:4d} descendants sur {:2d} générations'.format(arbreDescendants.nombreTotal(), arbreDescendants.maxGejnejration()))
-    if nbGejnejrations != 0:
-        # restreint l'arbre par le nombre de gejnejrations max
-        arbreDescendants.tailleArbre(nbGejnejrations)
-        print('avec limite : {:4d} descendants sur {:2d} générations'.format(arbreDescendants.nombreTotal(), arbreDescendants.maxGejnejration()))
-    if ident:
-        # filtre l'arbre, ne garde que les descendants qui ont le mesme nom que la racine et leur conjoint
-        arbreDescendants.filtreArbre()
-        print('avec filtre : {:4d} descendants sur {:2d} générations'.format(arbreDescendants.nombreTotal(), arbreDescendants.maxGejnejration()))
-    if len(idsFiltrants) != 0:
-        # filtre l'arbre, ne garde que les descendants qui aboutissent aux ejlejments filtrants 
-        arbreDescendants.filtreIdsArbre(idsFiltrants)
-        print('avec filtre : {:4d} descendants sur {:2d} générations'.format(arbreDescendants.nombreTotal(), arbreDescendants.maxGejnejration()))
-        
-    # partiel ou complet
-    partiel = ident or nbGejnejrations != 0 or len(idsFiltrants) != 0
-    
-    # ejtablit le nom du fichier pdf 
-    numejroRacine = arbreDescendants.numejroRacine()
-    ((prejnom, nom), raf, raf) = arbreDescendants.attributsDescendant(numejroRacine)
-    extension = (prejnom + nom).replace(' ', '')
-    extension = normalize('NFD', extension).encode('ascii','ignore').decode()    #tous les caracteres en ASCII    
-    racine = '/'.join(path.dirname(path.abspath(sys.argv[0])).split('/')[:-1])
-    if partiel: extFiltre = 'partiel'
-    else: extFiltre = 'complet'
-    nomFichierSortie = racine + '/rejsultat/' + extension +'-descendants-' + extFiltre
-    nomFichierSortieC = nomFichierSortie + 'C.pdf'
-    nomFichierSortieE = nomFichierSortie + 'E.pdf'
-    nomFichierSortieF = nomFichierSortie + 'F.pdf'
-    
-    # titre, filigrane
-    filigrane = (prejnom + nom).upper().replace(' ', '')
-    titre = []
-    if partiel: titre.append(u'Arbre partiel de descendance')
-    else: titre.append(u'Arbre de descendance')
-    titre.append(u'de '+ prejnom + ' ' + nom)
-    latejcon = racine + '/rejsultat/echiquierLatejcon4-150.png'
-    
-    #le message de statistiques
-    (filles, garcons) = arbreDescendants.nombreDescendants()
-    statistiques = ['{:d} descendants, {:d} filles et {:d} garçons'.format(filles + garcons, filles, garcons)]
+class dessineArbreDescendant:
+    def __init__(self, nomBase, racineIdentifiant, formatLong, ordreNp, nbGejnejrations, ident, idsFiltrants):
+       # ejtablit l'arbre 
+        self.arbreDescendants = ArbreDescendants(nomBase)
+        # construit l'arbre complet des descendants de l'individu spejcifiej avec les numejros normalisejs
+        self.arbreDescendants.arbreComplet(racineIdentifiant)
+        # rejcupehre les identifiants de la racine avant les filtres (qui peuvent ejventuellement l'effacer)
+        numejroRacine = self.arbreDescendants.numejroRacine()
+        ((prejnom, nom), raf, raf) = self.arbreDescendants.attributsDescendant(numejroRacine)
+        print('sans filtre : {:4d} descendants sur {:2d} générations'.format(self.arbreDescendants.nombreTotal(), self.arbreDescendants.maxGejnejration()))
+        if ident:
+            # filtre l'arbre, ne garde que les descendants qui ont le mesme nom que la racine et leur conjoint
+            self.arbreDescendants.filtreArbre()
+            print('avec filtre : {:4d} descendants sur {:2d} générations'.format(self.arbreDescendants.nombreTotal(), self.arbreDescendants.maxGejnejration()))
+        if len(idsFiltrants) != 0:
+            # filtre l'arbre, ne garde que les descendants qui aboutissent aux ejlejments filtrants 
+            self.arbreDescendants.filtreIdsArbre(idsFiltrants)
+            print('avec filtre : {:4d} descendants sur {:2d} générations'.format(self.arbreDescendants.nombreTotal(), self.arbreDescendants.maxGejnejration()))
+        if nbGejnejrations != 0:
+            # restreint l'arbre par le nombre de gejnejrations max
+            self.arbreDescendants.tailleArbre(nbGejnejrations)
+            (gejnMin, gejnMax) = self.arbreDescendants.plageGejnejrations()
+            print('avec limite : {:4d} descendants sur {:2d} générations'.format(self.arbreDescendants.nombreTotal(), gejnMax - gejnMin +1))
             
-    #recupehre tous les numejros d'ancestres 
-    tousNumejros = arbreDescendants.tousNumejros()
-    tousNumejros.sort()
+        # partiel ou complet
+        partiel = ident or nbGejnejrations != 0 or len(idsFiltrants) != 0
         
-    # calcule tous les positionnements thejoriques
-    maxGejnejration = arbreDescendants.maxGejnejration()
-    positions = {}
-    # on commence par les feuilles de l'arbre
-    # la 1ehre gejnejration est 1 (pas 0)
-    for gejnejration in reversed(range(1, maxGejnejration+1)):
-        # tous les arbres pour une gejnejration donneje
-        arbres = arbreDescendants.listeArbres(gejnejration)
-        listeContraints = []
-        #print('gejnejration=', gejnejration, '   len(arbres)=', len(arbres))
-        #print('arbres=', arbres)
-        # 1) aligne les parents sur les enfants
-        rang_h = maxGejnejration - gejnejration      #le 1er est 0
-        #print('rang_h=', rang_h)
-        for index in range(len(arbres)):
-            arbre = arbres[index]
-            enfants = arbreDescendants.listeEnfants(arbre)
-            parents = arbreDescendants.listeParents(arbre)
-            # diffejrencie les arbres libres (sans enfants) des autres
-            if len(enfants) == 0: milieuEnfants = 0
-            else : 
-                listeContraints.append(index)
-                (rang_hp, rang_vp) = positions[enfants[0]]
-                (rang_hd, rang_vd) = positions[enfants[-1]]
-                milieuEnfants = (rang_vp + rang_vd) /2
-            # positionne les parents
-            if len(parents) == 0: raise Exception ('INCOHÉRENCE ARBRE 1')
-            if len(parents) == 1: 
-                positions[parents[0]] = (rang_h, milieuEnfants)
-            elif len(parents) == 2:
-                positions[parents[0]] = (rang_h, milieuEnfants -DIS_V/2)
-                positions[parents[1]] = (rang_h, milieuEnfants +DIS_V/2)
-            elif len(parents) == 3:
-                positions[parents[0]] = (rang_h, milieuEnfants -DIS_V)
-                positions[parents[1]] = (rang_h, milieuEnfants)
-                positions[parents[2]] = (rang_h, milieuEnfants +DIS_V)
-            elif len(parents) == 4:
-                positions[parents[0]] = (rang_h, milieuEnfants -DIS_V-DIS_V/2)
-                positions[parents[1]] = (rang_h, milieuEnfants -DIS_V/2)
-                positions[parents[2]] = (rang_h, milieuEnfants +DIS_V/2)
-                positions[parents[3]] = (rang_h, milieuEnfants +DIS_V+DIS_V/2)
-            else: raise Exception ('INCOHÉRENCE ARBRE 2')
+        # ejtablit le nom du fichier pdf 
+        extension = (prejnom + nom).replace(' ', '')
+        extension = normalize('NFD', extension).encode('ascii','ignore').decode()    #tous les caracteres en ASCII    
+        racine = '/'.join(path.dirname(path.abspath(sys.argv[0])).split('/')[:-1])
+        if partiel: extFiltre = 'partiel'
+        else: extFiltre = 'complet'
+        nomFichierSortie = racine + '/rejsultat/' + extension +'-descendants-' + extFiltre
+        nomFichierSortieC = nomFichierSortie + 'C.pdf'
+        nomFichierSortieE = nomFichierSortie + 'E.pdf'
+        nomFichierSortieF = nomFichierSortie + 'F.pdf'
         
-        # 2) positionne les arbres les uns / autres
-        nbGejnejrations = maxGejnejration - gejnejration + 1
-        maxisPrejcedents = [0 for x in range(nbGejnejrations)]
-        #print('nbGejnejrations=', nbGejnejrations)
-        for arbre in arbres:
-            #print('maxisPrejcedents=', maxisPrejcedents)
-            # la liste des maximum et minimum sur chaque gejnejration de l'arbre
-            minis, maxis = arbreDescendants.listeMinisMaxis(arbre)
-            #print('minis=', minis, '  maxis=', maxis)
-            # calcule le dejcalage requis 
-            dejcalageRequis = 0
-            for index in range(len(minis)):
-                (rang_h, rang_v) = positions[minis[index]]
-                if index == 0: dejcalageRequis = max(dejcalageRequis, maxisPrejcedents[index] - rang_v + DIS_V)
-                else: dejcalageRequis = max(dejcalageRequis, maxisPrejcedents[index] - rang_v + DIS_V*1.5)
-            # procehde au dejcalage 
-            for numejro in arbre: 
-                (rang_h, rang_v) = positions[numejro]
-                positions[numejro] = (rang_h, rang_v + dejcalageRequis)
-            # mejmorise les maxis
-            for index in range(len(maxis)): 
-                (rang_h, rang_v) = positions[maxis[index]]
-                maxisPrejcedents[index] = rang_v
-                
-        #print('listeContraints=', listeContraints)
-        # 3) rejpartit harmonieusement les arbres non contraints dans l'espace entre les contraints
-        # explication : les arbres non contraints (ceux qui n'ont pas de descendants) sont positionnejs
-        # au plus haut, ce qui est disgrascieux. Il faut les rejpartir harmonieusement dans l'espace
-        # non contraint entre deux contraints ou les mettre au plus bas s'ils sont les premiers en haut.
-        # s'ils sont les derniers en bas, ils sont dejjah bien positionnejs.
-        # si aucun n'est contraint (cas de tous feuilles), c'est dejjah bon, raf
-        #if len(listeContraints) != 0:
-        if False:
-            # init avec l'index virtuel -1 et sa position
-            index1erContraint = listeContraints[0]
-            numejro1erContraint = arbres[index1erContraint][0]
-            (rang_hh, rang_v) = positions[numejro1erContraint]
-            indexPrejcejdent = -1
-            rang_vv = rang_v - (index1erContraint - indexPrejcejdent) *DIS_V
-            for indexContraint in listeContraints:
-                nbEspacesLibres = indexContraint - indexPrejcejdent
-                arbreContraint = arbres[indexContraint]
-                (raf, rang_v) = positions[arbreContraint[0]]
-                increjment = (rang_v - rang_vv) / (indexContraint - indexPrejcejdent)
-                for index in range(indexPrejcejdent+1, indexContraint):
-                    #print('arbres[index][0]=', arbres[index][0])
-                    rang_vv += increjment
-                    #print('positions[arbres[index][0]]=', positions[arbres[index][0]], ' => ', (rang_hh, rang_vv))
-                    positions[arbres[index][0]] = (rang_hh, rang_vv)
-                for numejro in arbreContraint: 
-                    (rang_h, rang_v) = positions[numejro]
-                    if rang_h != rang_hh: break
-                    rang_vv = rang_v
-                indexPrejcejdent = indexContraint
-                    
-    trace(positions)
-    (max_h, max_v) = maximumHV(positions)
-    #print('max_h=', max_h, 'max_v=', max_v)
-    ejcritPdf(nomFichierSortieC, arbreDescendants, formatLong, ordreNp, positions, max_h, max_v, 2.0, titre, filigrane, latejcon, statistiques)
-    ejcritPdfImprimable((nomFichierSortieE, nomFichierSortieF), arbreDescendants, formatLong, ordreNp, positions, titre, filigrane, latejcon, statistiques)         
-                          
-############################
-# trouve le maximum horizontal et vertical d'une liste d'ancehtres
-def maximumHV(positions):
-    maxH = maxV = 0
-    for (rang_h, rang_v) in positions.values():
-        maxH = max(maxH, rang_h)
-        maxV = max(maxV, rang_v)
-    return (maxH, maxV)
+        # titre, filigrane
+        filigrane = (prejnom + nom).upper().replace(' ', '')
+        titre = []
+        if partiel: titre.append(u'Arbre partiel de descendance')
+        else: titre.append(u'Arbre de descendance')
+        titre.append(u'de '+ prejnom + ' ' + nom)
+        latejcon = racine + '/rejsultat/echiquierLatejcon4-150.png'
+        
+        #le message de statistiques
+        (filles, garcons) = self.arbreDescendants.nombreDescendants()
+        statistiques = [f'{filles + garcons} descendants, {filles} filles et {garcons} garçons']
+            
+        # calcule tous les positionnements thejoriques
+        # avec les possibilitejs de filtres de nombre de gejnejrations en nejgatif ah des fins 
+        # de debogue, il est possible de ne pas avoir ah reprejsenter la racine de l'arbre
+        (gejnMin, gejnMax) = self.arbreDescendants.plageGejnejrations()
+        self.positions = {}
+        # on commence par les feuilles de l'arbre
+        # la 1ehre gejnejration est 1 (pas 0)
+        for gejnejration in reversed(range(gejnMin, gejnMax+1)):
+            # sur chaque gejnejration, en 3 temps
+            # 1) arbres basiques : les parents sont raccrochejs ah leurs enfants
+            # 2) arbres groupejs par ancestres : ils sont positionnejs ah l'intejrieur du groupe d'arbres
+            # 3) les groupes d'arbres sont positionnejs entre eux
+            # ah la fin du traitement d'une gejneration tout est ordonnej
+            arbresGroupejs = self.arbreDescendants.listeArbres(gejnejration)
+            # 1) aligne les parents sur les enfants (indejpendamment de la gejnejration N-1)
+            rang_h = gejnMax - gejnejration      #le 1er est 0
+            for arbresGroupej in arbresGroupejs:
+                for arbre in arbresGroupej:
+                    self.aligneParentsSurEnfants(rang_h, arbre)
+            # 2) positionne les arbres ejlejmentaires dans chaque groupe d'arbres
+            for arbresGroupej in arbresGroupejs:
+                self.positionneArbres(arbresGroupej)
+            # 3) positionne les groupes d'arbres les uns / aux autres
+            nbreGejnejrations = gejnMax - gejnejration + 1
+            self.positionneArbresGroupejs(arbresGroupejs, nbreGejnejrations)
+        self.trace()
+        (max_h, max_v) = self.maximumHV()
+        #print('max_h=', max_h, 'max_v=', max_v)
+        ejcritPdf(nomFichierSortieC, self.arbreDescendants, formatLong, ordreNp, self.positions, max_h, max_v, 2.0, titre, filigrane, latejcon, statistiques)
+        ejcritPdfImprimable((nomFichierSortieE, nomFichierSortieF), self.arbreDescendants, formatLong, ordreNp, self.positions, titre, filigrane, latejcon, statistiques)         
+
+    ##################
+    # positionne les parents d'un arbre par rapport ah ses enfants
+    def aligneParentsSurEnfants(self, rang_h, arbre):
+        enfants = self.arbreDescendants.listeEnfants(arbre)
+        parents = self.arbreDescendants.listeParents(arbre)
+        # diffejrencie les arbres libres (sans enfants) des autres
+        if len(enfants) == 0: milieuEnfants = 0
+        else : 
+            (rang_hp, rang_vp) = self.positions[enfants[0]]
+            (rang_hd, rang_vd) = self.positions[enfants[-1]]
+            milieuEnfants = (rang_vp + rang_vd) /2
+        # positionne les parents
+        if len(parents) == 0: raise Exception ('INCOHÉRENCE ARBRE 1')
+        if len(parents) == 1: 
+            self.positions[parents[0]] = (rang_h, milieuEnfants)
+        elif len(parents) == 2:
+            self.positions[parents[0]] = (rang_h, milieuEnfants -DIS_V/2)
+            self.positions[parents[1]] = (rang_h, milieuEnfants +DIS_V/2)
+        elif len(parents) == 3:
+            self.positions[parents[0]] = (rang_h, milieuEnfants -DIS_V)
+            self.positions[parents[1]] = (rang_h, milieuEnfants)
+            self.positions[parents[2]] = (rang_h, milieuEnfants +DIS_V)
+        elif len(parents) == 4:
+            self.positions[parents[0]] = (rang_h, milieuEnfants -DIS_V-DIS_V/2)
+            self.positions[parents[1]] = (rang_h, milieuEnfants -DIS_V/2)
+            self.positions[parents[2]] = (rang_h, milieuEnfants +DIS_V/2)
+            self.positions[parents[3]] = (rang_h, milieuEnfants +DIS_V+DIS_V/2)
+        else: raise Exception ('INCOHÉRENCE ARBRE 2')
+
+    ##################
+    # positionne les arbres ah l'intejrieur d'un groupe d'arbres
+    def positionneArbres(self, arbresGroupej):
+        feuilles = []
+        enTeste = True
+        memPosition = 0
+        memDejcalage = 0
+        for arbre in arbresGroupej:
+            # cherche les feuilles et les mejmorise
+            # une feuille est un arbre sans enfant, un couple sans enfant est une feuille
+            # FEUILLE
+            if len(self.arbreDescendants.listeEnfants(arbre)) == 0:
+                feuilles.append(arbre)
+                continue
+            # ARBRE
+            # trouve les positions verticales des parents de l'arbre
+            (rang_h, rang_vhaut, rang_vbas) = self.positionsParents(arbre)
+            # positionne les feuilles de teste
+            # inutile de dejcaler l'arbre
+            if enTeste:
+                position = rang_vhaut
+                for feuille in reversed(feuilles):
+                    # il faut trouver prendre en compte l'ejpaisseur de la feuille 
+                    position -= (DIS_V * len(feuille))
+                    (raf, rang_vh, raf) = self.positionsParents(feuille)
+                    dejcalage = position - rang_vh
+                    self.dejcaleArbre(feuille, dejcalage)
+                enTeste = False
+                feuilles = []
+                memPosition = rang_vbas
+                continue
+            # positionne les feuilles entre arbres
+            # l'espace minimum requis pour mettre les feuilles (y compris 0 feuille)
+            espaceRequis = DIS_V
+            for feuille in feuilles: espaceRequis += (DIS_V * len(feuille))
+            espaceDispo = rang_vhaut - memPosition
+            if espaceRequis > espaceDispo: 
+                memDejcalage += espaceRequis - espaceDispo
+                espaceDispo = espaceRequis
+            # dejcale l'arbre
+            self.dejcaleArbre(arbre, memDejcalage)
+            # rejpartit harmonieusement les feuilles
+            increjment = espaceDispo / (len(feuilles) +1)
+            position = memPosition
+            for feuille in feuilles:
+                position += increjment
+                (raf, rang_vh, raf) = self.positionsParents(feuille)
+                dejcalage = position - rang_vh
+                self.dejcaleArbre(feuille, dejcalage)
+            (rang_h, rang_vhaut, rang_vbas) = self.positionsParents(arbre)
+            feuilles = []
+            memPosition = rang_vbas
+        # positionne les feuilles de queue
+        position = memPosition
+        position += DIS_V
+        for feuille in feuilles:
+            (raf, rang_vh, raf) = self.positionsParents(feuille)
+            dejcalage = position - rang_vh
+            self.dejcaleArbre(feuille, dejcalage)
+            position += (DIS_V * len(feuille))
     
-############################
-# trace sur la console
-def trace(positions):
-    #print(positions)
-    controsle = []
-    for (clef, (h, v)) in positions.items(): controsle.append((v, clef))
-    controsle.sort()
-    #print (controsle)
+    ##################
+    # positionne les groupes d'arbres entre eux
+    def positionneArbresGroupejs(self, arbresGroupejs, nbreGejnejrations):
+        maxisPrejcedents = [0 for x in range(nbreGejnejrations)]
+        for arbresGroupej in arbresGroupejs:
+            # INVARIANT : chaque groupe d'arbres est bien positionnej en interne
+            # calcul des minis du groupe d'arbres
+            minis = [sys.maxsize for x in range(nbreGejnejrations)]
+            for arbre in arbresGroupej:
+                for numejro in arbre: 
+                    (rang_h, rang_v) = self.positions[numejro]
+                    minis[rang_h] = min(minis[rang_h], rang_v)
+            # calcul le dejcalage  
+            dejcalageRequis = 0
+            for gejnejration in range(nbreGejnejrations):
+                ejcart = maxisPrejcedents[gejnejration] - minis[gejnejration]
+                dejcalageRequis = max(dejcalageRequis, ejcart + DIS_V*1.5)
+            # applique le dejcalage et mejmorise les maxis
+            for arbre in arbresGroupej:
+                for numejro in arbre: 
+                    (rang_h, rang_v) = self.positions[numejro]
+                    self.positions[numejro] = (rang_h, rang_v + dejcalageRequis)
+                    maxisPrejcedents[rang_h] = max(maxisPrejcedents[rang_h], rang_v + dejcalageRequis)
+
+    ##################
+    # trouve les positions des parents de l'arbre 
+    def positionsParents(self, arbre):
+        parents = self.arbreDescendants.listeParents(arbre)
+        (rang_h, rang_vhaut) = self.positions[parents[0]]
+        (rang_h, rang_vbas) = self.positions[parents[-1]]
+        return (rang_h, rang_vhaut, rang_vbas)
+                    
+    ##################
+    # dejcale tous les noeuds de l'arbres 
+    def dejcaleArbre(self, arbre, dejcalage):
+        for numejro in arbre:
+            (rang_h, rang_v) = self.positions[numejro]
+            self.positions[numejro] = (rang_h, rang_v + dejcalage)
+    
+    ############################
+    # trouve le maximum horizontal et vertical d'une liste d'ancehtres
+    def maximumHV(self):
+        maxH = maxV = 0
+        for (rang_h, rang_v) in self.positions.values():
+            maxH = max(maxH, rang_h)
+            maxV = max(maxV, rang_v)
+        return (maxH, maxV)
+
+    ############################
+    # trace sur la console
+    def trace(self):
+        #print(self.positions)
+        controsle = []
+        for (clef, (h, v)) in self.positions.items(): controsle.append((v, clef))
+        controsle.sort()
+        #print (controsle)
     
 ############################
 #creje un PDF

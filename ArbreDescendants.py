@@ -16,7 +16,8 @@ Programme de test de la classe ArbreDescendants.
 La classe ArbreDescendants établit l'arbre des descendants de l'individu 
 spécifié par son identifiant gramps. Cet arbre peut être filtré tel 
 qu'expliqué dans "Accès aux bases de données Gramps", LAT2020.JYS.483.
-Il est possible de limiter le nombre de générations affichées (0 = toutes)
+Il est possible de limiter le nombre de générations affichées (0 = toutes, 
+>0 = en partant de la racine, <0 = en partant des feuilles pour débogue)
 Le critère filtrant éventuel est l'identité des noms des descendants
 au nom de l'ancêtre (ce qui limite à la descendance mâle seulement)
 ou une liste d'identifiants de descendants (voir chercheIndividus.py)
@@ -59,11 +60,6 @@ def testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident, id
     print('sans filtre')
     print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
     print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
-    if nbGejnejrations != 0:
-        arbreDescendants.tailleArbre(nbGejnejrations)
-        print('avec limite')
-        print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
-        print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
     if ident: 
         arbreDescendants.filtreArbre()
         print('avec filtre sur patronyme')
@@ -72,6 +68,11 @@ def testeArbreDescendants(nomBase, racineIdentifiant, nbGejnejrations, ident, id
     if len(idsFiltrants) != 0:
         arbreDescendants.filtreIdsArbre(idsFiltrants)
         print('avec filtre sur identifiants de descendants')
+        print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
+        print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
+    if nbGejnejrations != 0:
+        arbreDescendants.tailleArbre(nbGejnejrations)
+        print('avec limite')
         print('{:9d} descendants trouvés'.format(arbreDescendants.nombreTotal()))
         print('{:9d} générations trouvées'.format(arbreDescendants.maxGejnejration()))
     arbreDescendants.afficheArbre()    
@@ -239,13 +240,19 @@ class ArbreDescendants:
         
     ############################
     # restreint l'arbre par le nombre de gejnejrations max
+    # en partant de la racine (positif) ou des feuilles (négatif)
     def tailleArbre(self, nbGejnejrations):
         # si pas de limitation, raf
         if nbGejnejrations == 0: return
         # enlehve de l'arbre tout ce qui est hors limite 
         clefs = list(self.descendants.keys())
-        for clef in clefs:
-            if clef[0] > nbGejnejrations +1: self.descendants.pop(clef)
+        if nbGejnejrations > 0:
+            for clef in clefs:
+                if clef[0] > nbGejnejrations +1: self.descendants.pop(clef)
+        else:
+            for clef in clefs:
+                if clef[0] < -nbGejnejrations: self.descendants.pop(clef)
+            
 
     ############################
     # retourne le nombre total de descendants + conjoints connus
@@ -273,6 +280,13 @@ class ArbreDescendants:
         clefs.sort()
         return clefs[-1][0]
     
+    ############################
+    # retourne la gejnejration minimum et la gejnejration maximum de l'arbre
+    def plageGejnejrations(self):
+        clefs = list(self.descendants.keys())
+        clefs.sort()
+        return (clefs[0][0], clefs[-1][0])
+        
     ############################
     # retourne le numejro de la racine de l'arbre
     def numejroRacine(self):
@@ -339,6 +353,7 @@ class ArbreDescendants:
     
     ############################
     # retourne tous les arbres pour une gejnejration donneje
+    # les arbres sont groupejs en fonction de leur parent
     def listeArbres(self, gejnejration):
         arbres = []
         clefs = list(self.descendants.keys())
@@ -365,9 +380,30 @@ class ArbreDescendants:
             for arbre in arbres:
                 if conjointNumejro in arbre: arbre.append(clef)
         # met dans l'ordre
-        for arbre in arbres: arbre.sort()
-        return arbres
-    
+        #for arbre in arbres: arbre.sort()
+        #return arbres
+        # regroupe les arbres en fonction de leur parent 
+        arbresGroupejs = []
+        groupe = []
+        memParent = (0, 0)
+        for arbre in arbres: 
+            # met chaque arbre dans l'ordre
+            arbre.sort()
+            # regroupe en fonction du parent
+            for clef in arbre:
+                # pas les conjoints
+                if len(clef) == 3: continue
+                (parentNumejro, raf, raf, raf) = self.descendants[clef]
+                break
+            if parentNumejro == memParent: 
+                groupe.append(arbre)
+            else:
+                if len(groupe) != 0: arbresGroupejs.append(groupe)
+                groupe = [arbre]
+                memParent = parentNumejro
+        if len(groupe) != 0: arbresGroupejs.append(groupe)
+        return arbresGroupejs
+            
     ############################
     # retourne la liste des descendants de 1ehre gejejration
     def listeEnfants(self, arbre):
@@ -381,7 +417,7 @@ class ArbreDescendants:
         return enfants
     
     ############################
-    # retourne la liste des descendants de 1ehre gejejration
+    # retourne la liste des ascendants de 1ehre gejejration
     def listeParents(self, arbre):
         gejnejration = arbre[0][0]
         parents = []
