@@ -37,7 +37,7 @@ DIS_V = 2.2
 
 def main():
     try:
-        if len(sys.argv) < 3: raise Exception()
+        if len(sys.argv) < 3: raise Exception('USAGE')
         nomBase = sys.argv[1].strip()
         racineIdentifiant = sys.argv[2].strip()
         formatLong = False
